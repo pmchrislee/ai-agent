@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant - Static Version</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: #4a5568;
+            font-size: 2.5rem;
+            margin-bottom: 5px;
+        }
+
+        .version {
+            color: #718096;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #f7fafc;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #48bb78;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            flex: 1;
+        }
+
+        .chat-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            max-height: 500px;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message-content {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 15px;
+            border-radius: 15px;
+            max-width: 80%;
+        }
+
+        .user-message .message-content {
+            background: #667eea;
+            color: white;
+            margin-left: auto;
+            flex-direction: row-reverse;
+        }
+
+        .agent-message .message-content {
+            background: #f7fafc;
+            color: #4a5568;
+        }
+
+        .message-time {
+            font-size: 0.8rem;
+            color: #a0aec0;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        .user-message .message-time {
+            text-align: left;
+        }
+
+        .chat-input-container {
+            padding: 20px;
+            border-top: 1px solid #e2e8f0;
+            background: #f7fafc;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        #messageInput {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 25px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        #messageInput:focus {
+            border-color: #667eea;
+        }
+
+        .send-button {
+            padding: 12px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s;
+        }
+
+        .send-button:hover {
+            background: #5a67d8;
+        }
+
+        .input-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .action-button {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #4a5568;
+            transition: all 0.3s;
+        }
+
+        .action-button:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .sidebar-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-section h3 {
+            color: #4a5568;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .quick-action {
+            padding: 12px;
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .quick-action:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .stats {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        .stat-value {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .notice {
+            background: #e6fffa;
+            border: 1px solid #81e6d9;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #234e52;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                order: -1;
+            }
+            
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🤖 AI Assistant</h1>
+            <p class="version">v1.0.0 - Static Version</p>
+            <div class="status-indicator">
+                <span class="status-dot"></span>
+                <span id="statusText">Ready</span>
+            </div>
+        </header>
+
+        <div class="notice">
+            <strong>📱 Static Version:</strong> This is a client-side version that works on GitHub Pages. All responses are generated locally using sophisticated humor algorithms!
+        </div>
+
+        <main class="main-content">
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message agent-message">
+                        <div class="message-content">
+                            <p>Hello! I'm your AI assistant running in static mode. How can I help you today?</p>
+                        </div>
+                        <div class="message-time" id="welcomeTime"></div>
+                    </div>
+                </div>
+
+                <div class="chat-input-container">
+                    <div class="input-group">
+                        <input type="text" id="messageInput" placeholder="Type your message here..." autocomplete="off">
+                        <button id="sendButton" class="send-button">
+                            Send
+                        </button>
+                    </div>
+                    <div class="input-actions">
+                        <button class="action-button" id="clearButton">Clear</button>
+                        <button class="action-button" id="historyButton">History</button>
+                        <button class="action-button" id="statusButton">Status</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="sidebar-section">
+                    <h3>Quick Actions</h3>
+                    <div class="quick-actions">
+                        <button class="quick-action" data-action="weather">Weather</button>
+                        <button class="quick-action" data-action="news">News</button>
+                        <button class="quick-action" data-action="joke">Joke</button>
+                        <button class="quick-action" data-action="help">Help</button>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>Agent Stats</h3>
+                    <div class="stats" id="agentStats">
+                        <div class="stat-item">
+                            <span class="stat-label">Status:</span>
+                            <span class="stat-value" id="agentStatus">Ready</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Messages:</span>
+                            <span class="stat-value" id="messageCount">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        class StaticAIAgent {
+            constructor() {
+                this.messageCount = 0;
+                this.conversationHistory = [];
+                this.isLoading = false;
+                this.initializeEventListeners();
+                this.updateStats();
+            }
+
+            initializeEventListeners() {
+                const messageInput = document.getElementById('messageInput');
+                const sendButton = document.getElementById('sendButton');
+                
+                messageInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+                
+                sendButton.addEventListener('click', () => this.sendMessage());
+                
+                document.getElementById('clearButton').addEventListener('click', () => this.clearChat());
+                document.getElementById('historyButton').addEventListener('click', () => this.showHistory());
+                document.getElementById('statusButton').addEventListener('click', () => this.showStatus());
+                
+                document.querySelectorAll('.quick-action').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const action = e.currentTarget.dataset.action;
+                        this.handleQuickAction(action);
+                    });
+                });
+            }
+
+            sendMessage() {
+                const messageInput = document.getElementById('messageInput');
+                const message = messageInput.value.trim();
+                
+                if (!message || this.isLoading) return;
+                
+                this.addMessage(message, 'user');
+                messageInput.value = '';
+                
+                this.setLoading(true);
+                
+                // Simulate processing delay
+                setTimeout(() => {
+                    const response = this.processMessage(message);
+                    this.addMessage(response, 'agent');
+                    this.setLoading(false);
+                    this.messageCount++;
+                    this.updateStats();
+                }, 1000 + Math.random() * 1000);
+            }
+
+            processMessage(message) {
+                const messageLower = message.toLowerCase();
+                
+                // Check for combined requests first
+                if (messageLower.includes('weather') && messageLower.includes('joke')) {
+                    return this.getWeatherJoke();
+                } else if (messageLower.includes('weather')) {
+                    return this.getWeatherInfo();
+                } else if (messageLower.includes('joke')) {
+                    return this.getGeneralJoke();
+                } else if (messageLower.includes('hello') || messageLower.includes('hi')) {
+                    return "Hello! How can I help you today?";
+                } else if (messageLower.includes('news')) {
+                    return "Here are the latest headlines: AI technology advances, Climate research updates, and Tech industry growth.";
+                } else if (messageLower.includes('help')) {
+                    return "I can help with weather, news, jokes, or just chat! What would you like to know?";
+                } else {
+                    return `I understand you said: '${message}'. How can I assist you further?`;
+                }
+            }
+
+            getWeatherJoke() {
+                const weatherJokes = [
+                    "The meteorologist's favorite type of music? Heavy metal - especially when it's hailing! Today's forecast: 74°F with a 90% chance of sophisticated wordplay! 🎵⚡",
+                    "Why do clouds never get lonely? Because they're always in good company - they're quite the cumulus crowd! Currently 77°F with scattered wit and variable humor! ☁️😏",
+                    "What did the barometric pressure say to the thermometer? 'I'm feeling quite under pressure today, but you seem to be rising to the occasion!' It's 72°F with high-pressure humor! 📊🌡️",
+                    "The wind's favorite type of literature? Gust-ave Flaubert novels, naturally! Today's reading: 79°F with light winds and a chance of literary references! 📚💨",
+                    "Why did the dew point become a philosopher? Because it was always questioning the humidity of existence! Current conditions: 75°F with existential clarity! 🤔💧",
+                    "What's a tornado's favorite dance? The twist, obviously - though it prefers to waltz through the countryside! Today's forecast: 73°F with a chance of meteorological metaphors! 🌪️💃"
+                ];
+                
+                return weatherJokes[Math.floor(Math.random() * weatherJokes.length)];
+            }
+
+            getWeatherInfo() {
+                const weatherConditions = [
+                    "It's a beautiful sunny day at 78°F! Perfect weather for outdoor activities! ☀️",
+                    "Currently 72°F with partly cloudy skies and a gentle breeze. Great day to be outside! 🌤️",
+                    "The temperature is 75°F with clear skies. Ideal weather for a walk in the park! ☀️",
+                    "It's 80°F and sunny with low humidity. A perfect summer day! ☀️",
+                    "Currently 68°F with some clouds rolling in. Pleasant weather for the afternoon! ☁️",
+                    "The temperature is 82°F with bright sunshine. Don't forget your sunscreen! ☀️🧴"
+                ];
+                
+                return weatherConditions[Math.floor(Math.random() * weatherConditions.length)];
+            }
+
+            getGeneralJoke() {
+                const generalJokes = [
+                    "I told my wife she was drawing her eyebrows too high. She looked surprised. 🎭",
+                    "Why don't scientists trust atoms? Because they make up everything - it's elementary, my dear Watson! ⚛️🔬",
+                    "I'm reading a book about anti-gravity. It's impossible to put down! 📚⬆️",
+                    "What do you call a can opener that doesn't work? A can't opener! 🥫🔧",
+                    "I used to be a baker, but I couldn't make enough dough. Now I'm a banker - the interest is much better! 🥖💰",
+                    "Why did the math book look so sad? Because it had too many problems! 📖😢",
+                    "What do you call a fish wearing a bowtie? So-fish-ticated! 🐟🎀",
+                    "I told my computer I needed a break, and now it won't stop sending me Kit-Kat ads! 💻🍫",
+                    "Why don't oysters donate to charity? Because they are shellfish! 🦪💸",
+                    "What do you call a bear with no teeth? A gummy bear - though I prefer the sour variety! 🐻🍬"
+                ];
+                
+                return generalJokes[Math.floor(Math.random() * generalJokes.length)];
+            }
+
+            addMessage(content, sender) {
+                const chatMessages = document.getElementById('chatMessages');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}-message`;
+                
+                const time = new Date().toLocaleTimeString();
+                
+                messageDiv.innerHTML = `
+                    <div class="message-content">
+                        <p>${this.escapeHtml(content)}</p>
+                    </div>
+                    <div class="message-time">${time}</div>
+                `;
+                
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // Store in history
+                this.conversationHistory.push({
+                    timestamp: new Date().toISOString(),
+                    message: sender === 'user' ? content : '',
+                    response: sender === 'agent' ? content : ''
+                });
+            }
+
+            setLoading(loading) {
+                this.isLoading = loading;
+                const sendButton = document.getElementById('sendButton');
+                const messageInput = document.getElementById('messageInput');
+                
+                if (loading) {
+                    sendButton.innerHTML = '<div class="loading"></div>';
+                    sendButton.disabled = true;
+                    messageInput.disabled = true;
+                } else {
+                    sendButton.innerHTML = 'Send';
+                    sendButton.disabled = false;
+                    messageInput.disabled = false;
+                    messageInput.focus();
+                }
+            }
+
+            clearChat() {
+                if (confirm('Are you sure you want to clear the chat?')) {
+                    const chatMessages = document.getElementById('chatMessages');
+                    chatMessages.innerHTML = `
+                        <div class="message agent-message">
+                            <div class="message-content">
+                                <p>Chat cleared. How can I help you?</p>
+                            </div>
+                            <div class="message-time">${new Date().toLocaleTimeString()}</div>
+                        </div>
+                    `;
+                    this.conversationHistory = [];
+                    this.messageCount = 0;
+                    this.updateStats();
+                }
+            }
+
+            showHistory() {
+                if (this.conversationHistory.length === 0) {
+                    alert('No conversation history found.');
+                } else {
+                    let historyText = 'Conversation History:\n\n';
+                    this.conversationHistory.forEach(item => {
+                        if (item.message) {
+                            historyText += `${new Date(item.timestamp).toLocaleString()}\n`;
+                            historyText += `You: ${item.message}\n`;
+                            historyText += `Agent: ${item.response}\n\n`;
+                        }
+                    });
+                    alert(historyText);
+                }
+            }
+
+            showStatus() {
+                const statusText = `Agent Status:
+Name: AI Assistant
+Version: 1.0.0 (Static)
+Status: Ready
+Messages Processed: ${this.messageCount}
+Mode: Client-side (GitHub Pages compatible)`;
+                
+                alert(statusText);
+            }
+
+            handleQuickAction(action) {
+                const actions = {
+                    weather: 'What\'s the weather like today?',
+                    news: 'Show me the latest news',
+                    joke: 'Tell me a joke',
+                    help: 'What can you help me with?'
+                };
+                
+                const message = actions[action];
+                if (message) {
+                    document.getElementById('messageInput').value = message;
+                    this.sendMessage();
+                }
+            }
+
+            updateStats() {
+                document.getElementById('messageCount').textContent = this.messageCount;
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new StaticAIAgent();
+            document.getElementById('welcomeTime').textContent = new Date().toLocaleTimeString();
+        });
+    </script>
+</body>
+</html>
