@@ -18,6 +18,22 @@ DEFAULT_LOCATION = "Queens,NY,US"
 DEFAULT_LAT = 40.7282
 DEFAULT_LON = -73.7949
 
+# Known location coordinates for better accuracy
+LOCATION_COORDINATES = {
+    "queens,ny": (40.7282, -73.7949),
+    "queens": (40.7282, -73.7949),
+    "new york,ny": (40.7128, -74.0060),  # Manhattan coordinates
+    "new york": (40.7128, -74.0060),
+    "manhattan,ny": (40.7831, -73.9712),
+    "manhattan": (40.7831, -73.9712),
+    "brooklyn,ny": (40.6782, -73.9442),
+    "brooklyn": (40.6782, -73.9442),
+    "bronx,ny": (40.8448, -73.8648),
+    "bronx": (40.8448, -73.8648),
+    "staten island,ny": (40.5795, -74.1502),
+    "staten island": (40.5795, -74.1502),
+}
+
 
 def parse_location_from_message(message: str) -> Optional[str]:
     """
@@ -105,6 +121,12 @@ class WeatherService:
                 - wind_speed: Wind speed in mph
                 - location: Location name
         """
+        # Check if we have coordinates for this location
+        city_lower = city.lower().strip()
+        if city_lower in LOCATION_COORDINATES:
+            lat, lon = LOCATION_COORDINATES[city_lower]
+            logger.debug(f"Using known coordinates for {city}: {lat}, {lon}")
+        
         if not self.api_key:
             logger.warning("No OpenWeatherMap API key found. Using fallback weather.")
             return self._get_fallback_weather()
@@ -120,6 +142,7 @@ class WeatherService:
             if lat and lon:
                 params["lat"] = lat
                 params["lon"] = lon
+                logger.debug(f"Fetching weather using coordinates: {lat}, {lon}")
             else:
                 # Normalize city format - ensure it's in the right format for API
                 # If it's just "Queens,NY", try to use it as-is, API should handle it
@@ -170,13 +193,15 @@ class WeatherService:
             "location": "Queens, NY"
         }
 
-    def format_weather_response(self, weather_data: Dict, include_joke: bool = False) -> str:
+    def format_weather_response(self, weather_data: Dict, include_joke: bool = False, 
+                                requested_location: Optional[str] = None) -> str:
         """
         Format weather data into a user-friendly response.
 
         Args:
             weather_data: Weather data dictionary
             include_joke: Whether to include a weather joke
+            requested_location: The location name the user requested (for display)
 
         Returns:
             str: Formatted weather response
@@ -187,7 +212,8 @@ class WeatherService:
         feels_like = weather_data["feels_like_f"]
         humidity = weather_data["humidity"]
         wind = weather_data["wind_speed"]
-        location = weather_data["location"]
+        # Use requested location if provided, otherwise use API's returned location
+        location = requested_location or weather_data["location"]
 
         # Weather emoji mapping
         emoji_map = {

@@ -5,6 +5,22 @@
  * and response generation for the GitHub Pages static version.
  */
 
+// Known location coordinates for better accuracy with wttr.in API
+const LOCATION_COORDINATES = {
+    "queens,ny": "40.7282,-73.7949",
+    "queens": "40.7282,-73.7949",
+    "new york,ny": "40.7128,-74.0060",  // Manhattan coordinates
+    "new york": "40.7128,-74.0060",
+    "manhattan,ny": "40.7831,-73.9712",
+    "manhattan": "40.7831,-73.9712",
+    "brooklyn,ny": "40.6782,-73.9442",
+    "brooklyn": "40.6782,-73.9442",
+    "bronx,ny": "40.8448,-73.8648",
+    "bronx": "40.8448,-73.8648",
+    "staten island,ny": "40.5795,-74.1502",
+    "staten island": "40.5795,-74.1502",
+};
+
 class StaticAIAgent {
     constructor() {
         this.messageCount = 0;
@@ -99,6 +115,41 @@ class StaticAIAgent {
     }
 
     /**
+     * Format location name for display
+     * @param {string} location - Location string (e.g., "queens,ny")
+     * @returns {string} - Formatted location name (e.g., "Queens, NY")
+     */
+    formatLocationName(location) {
+        // Map of known locations to their display names
+        const locationNames = {
+            "queens,ny": "Queens, NY",
+            "queens": "Queens, NY",
+            "new york,ny": "New York, NY",
+            "new york": "New York, NY",
+            "manhattan,ny": "Manhattan, NY",
+            "manhattan": "Manhattan, NY",
+            "brooklyn,ny": "Brooklyn, NY",
+            "brooklyn": "Brooklyn, NY",
+            "bronx,ny": "Bronx, NY",
+            "bronx": "Bronx, NY",
+            "staten island,ny": "Staten Island, NY",
+            "staten island": "Staten Island, NY",
+        };
+        
+        const locationLower = location.toLowerCase().trim();
+        if (locationNames[locationLower]) {
+            return locationNames[locationLower];
+        }
+        
+        // Otherwise, capitalize properly
+        return location.split(',').map(part => {
+            return part.trim().split(' ').map(word => {
+                return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+            }).join(' ');
+        }).join(', ');
+    }
+
+    /**
      * Parse location from a user message
      * @param {string} message - The user's message
      * @returns {string|null} - Parsed location or null
@@ -177,17 +228,25 @@ class StaticAIAgent {
     async getWeatherJoke(location = null) {
         try {
             // Default to Queens, NY if no location specified
-            let locationQuery = location ? location : 'Queens,NY';
+            let locationQuery = location ? location.toLowerCase().trim() : 'queens,ny';
+            let displayLocation = location ? this.formatLocationName(location) : 'Queens, NY';
             
-            // Capitalize first letter of each word for better API recognition
-            // "queens,ny" -> "Queens,NY"
-            locationQuery = locationQuery.split(',').map(part => {
-                return part.trim().split(' ').map(word => {
-                    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-                }).join(' ');
-            }).join(',');
+            // Check if we have coordinates for this location
+            if (LOCATION_COORDINATES[locationQuery]) {
+                locationQuery = LOCATION_COORDINATES[locationQuery];
+            } else {
+                // Capitalize first letter of each word for better API recognition
+                // "queens,ny" -> "Queens,NY"
+                locationQuery = locationQuery.split(',').map(part => {
+                    return part.trim().split(' ').map(word => {
+                        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+                    }).join(' ');
+                }).join(',');
+                displayLocation = locationQuery;
+            }
             
             // Use wttr.in API (free, no API key required)
+            // wttr.in accepts coordinates in format: lat,lon
             const response = await fetch(`https://wttr.in/${encodeURIComponent(locationQuery)}?format=j1`);
             
             if (!response.ok) {
@@ -199,7 +258,8 @@ class StaticAIAgent {
             const current = data.current_condition[0];
             const tempF = current.temp_F;
             const condition = current.weatherDesc[0].value;
-            const locationName = data.nearest_area[0].areaName[0].value || locationQuery;
+            // Use the requested location name instead of API's returned location
+            const locationName = displayLocation;
             
             // Weather emoji mapping
             const emojiMap = {
@@ -251,17 +311,25 @@ class StaticAIAgent {
     async getWeatherInfo(location = null) {
         try {
             // Default to Queens, NY if no location specified
-            let locationQuery = location ? location : 'Queens,NY';
+            let locationQuery = location ? location.toLowerCase().trim() : 'queens,ny';
+            let displayLocation = location ? this.formatLocationName(location) : 'Queens, NY';
             
-            // Capitalize first letter of each word for better API recognition
-            // "queens,ny" -> "Queens,NY"
-            locationQuery = locationQuery.split(',').map(part => {
-                return part.trim().split(' ').map(word => {
-                    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-                }).join(' ');
-            }).join(',');
+            // Check if we have coordinates for this location
+            if (LOCATION_COORDINATES[locationQuery]) {
+                locationQuery = LOCATION_COORDINATES[locationQuery];
+            } else {
+                // Capitalize first letter of each word for better API recognition
+                // "queens,ny" -> "Queens,NY"
+                locationQuery = locationQuery.split(',').map(part => {
+                    return part.trim().split(' ').map(word => {
+                        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+                    }).join(' ');
+                }).join(',');
+                displayLocation = locationQuery;
+            }
             
             // Use wttr.in API (free, no API key required)
+            // wttr.in accepts coordinates in format: lat,lon
             const response = await fetch(`https://wttr.in/${encodeURIComponent(locationQuery)}?format=j1`);
             
             if (!response.ok) {
@@ -276,7 +344,8 @@ class StaticAIAgent {
             const humidity = current.humidity;
             const windSpeed = current.windspeedMiles;
             const feelsLike = current.FeelsLikeF;
-            const locationName = data.nearest_area[0].areaName[0].value || locationQuery;
+            // Use the requested location name instead of API's returned location
+            const locationName = displayLocation;
             
             // Weather emoji mapping
             const emojiMap = {

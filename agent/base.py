@@ -204,16 +204,52 @@ class AIAgent:
         weather_service = get_weather_service()
         # Parse location from message, default to Queens, NY
         location = parse_location_from_message(message) or DEFAULT_LOCATION
+        # Format location name for display
+        display_location = self._format_location_name(location)
         weather_data = await weather_service.get_weather(city=location)
-        return weather_service.format_weather_response(weather_data, include_joke=True)
+        return weather_service.format_weather_response(weather_data, include_joke=True, 
+                                                      requested_location=display_location)
 
     async def _handle_weather_info(self, message: str) -> str:
         """Handle weather info request with real weather data."""
         weather_service = get_weather_service()
         # Parse location from message, default to Queens, NY
         location = parse_location_from_message(message) or DEFAULT_LOCATION
+        # Format location name for display
+        display_location = self._format_location_name(location)
         weather_data = await weather_service.get_weather(city=location)
-        return weather_service.format_weather_response(weather_data, include_joke=False)
+        return weather_service.format_weather_response(weather_data, include_joke=False,
+                                                      requested_location=display_location)
+    
+    def _format_location_name(self, location: str) -> str:
+        """Format location name for display."""
+        location_lower = location.lower().strip()
+        location_names = {
+            "queens,ny": "Queens, NY",
+            "queens": "Queens, NY",
+            "new york,ny": "New York, NY",
+            "new york": "New York, NY",
+            "manhattan,ny": "Manhattan, NY",
+            "manhattan": "Manhattan, NY",
+            "brooklyn,ny": "Brooklyn, NY",
+            "brooklyn": "Brooklyn, NY",
+            "bronx,ny": "Bronx, NY",
+            "bronx": "Bronx, NY",
+            "staten island,ny": "Staten Island, NY",
+            "staten island": "Staten Island, NY",
+        }
+        
+        if location_lower in location_names:
+            return location_names[location_lower]
+        
+        # Otherwise, capitalize properly
+        parts = location.split(',')
+        formatted_parts = []
+        for part in parts:
+            words = part.strip().split()
+            formatted_words = [word.capitalize() for word in words]
+            formatted_parts.append(' '.join(formatted_words))
+        return ', '.join(formatted_parts)
 
     def _add_to_history(self, message: str, response: str, user_id: str):
         """
