@@ -37,3 +37,20 @@ venv.bak/
 # OS
 .DS_Store
 Thumbs.db
+
+# Environment variables
+.env
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Logs
+*.log
+logs/
+
+# Backup files
+*.old
+*.bak

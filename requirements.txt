@@ -1,4 +1,23 @@
+# Core web framework
 flask==2.3.3
+flask-cors==4.0.0
+
+# HTTP requests (if needed for future features)
 requests==2.31.0
+aiohttp==3.9.1
+
+# Environment variable management
 python-dotenv==1.0.0
+
+# Rich CLI interface
 rich==13.6.0
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+
+# Code quality (optional but recommended)
+# black==23.12.1
+# flake8==6.1.0
+# mypy==1.7.1

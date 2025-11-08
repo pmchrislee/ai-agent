@@ -1,345 +1,158 @@
 #!/usr/bin/env python3
 """
-Simple AI Agent - Ready to Run!
+AI Agent - Multi-interface conversational assistant.
+
+This is the main entry point for the AI Agent application. It supports
+both CLI and web interfaces with proper configuration management, logging,
+and error handling.
+
+Usage:
+    Run CLI interface:
+        python main.py cli
+
+    Run web interface:
+        python main.py web
+
+    Run with custom config:
+        WEB_PORT=5000 DEBUG=true python main.py web
 """
-import asyncio
+
 import sys
-from datetime import datetime
+import asyncio
+import logging
 
-class SimpleAIAgent:
-    def __init__(self):
-        self.name = "AI Assistant"
-        self.version = "1.0.0"
-        self.status = "idle"
-        self.conversation_history = []
-    
-    async def process_message(self, message: str, user_id: str = "default"):
-        """Process a user message and return a response"""
-        self.status = "processing"
-        
-        # Simple response logic
-        message_lower = message.lower()
-        
-        if "hello" in message_lower or "hi" in message_lower:
-            response = "Hello! How can I help you today?"
-        elif "weather" in message_lower:
-            response = "The weather is sunny and 22°C today! ☀️"
-        elif "news" in message_lower:
-            response = "Here are the latest headlines: AI technology advances, Climate research updates, and Tech industry growth."
-        elif "joke" in message_lower:
-            response = "Why don't scientists trust atoms? Because they make up everything! 😄"
-        elif "help" in message_lower:
-            response = "I can help with weather, news, jokes, or just chat! What would you like to know?"
-        else:
-            response = f"I understand you said: '{message}'. How can I assist you further?"
-        
-        # Store in history
-        self.conversation_history.append({
-            "timestamp": datetime.now().isoformat(),
-            "user_id": user_id,
-            "message": message,
-            "response": response
-        })
-        
-        self.status = "idle"
-        return {
-            "content": response,
-            "type": "chat",
-            "metadata": {"confidence": 0.8}
-        }
-    
-    def get_status(self):
-        """Get current agent status"""
-        return {
-            "name": self.name,
-            "version": self.version,
-            "status": self.status,
-            "memory_size": len(self.conversation_history),
-            "uptime": datetime.now().isoformat()
-        }
-    
-    def get_conversation_history(self, user_id: str = "default", limit: int = 10):
-        """Get conversation history for a user"""
-        user_history = [h for h in self.conversation_history if h["user_id"] == user_id]
-        return user_history[-limit:]
+from agent import AIAgent
+from interfaces import WebInterface, CLIInterface
+from config import Config
+from utils import setup_logging
 
-class WebInterface:
-    def __init__(self, agent, config):
-        self.agent = agent
-        self.config = config
-        self.app = None
-        self._setup_flask()
-    
-    def _setup_flask(self):
-        """Setup Flask web interface"""
-        try:
-            from flask import Flask, render_template, request, jsonify
-            from flask_cors import CORS
-            
-            self.app = Flask(__name__, 
-                            template_folder='templates',
-                            static_folder='static')
-            CORS(self.app)
-            self._setup_routes()
-            print("✅ Flask web interface ready")
-        except ImportError:
-            print("❌ Flask not installed. Run: pip install flask")
-            self.app = None
-    
-    def _setup_routes(self):
-        """Setup Flask routes"""
-        from flask import render_template, request, jsonify
-        
-        @self.app.route('/')
-        def index():
-            return render_template('index.html', 
-                                 agent_name=self.agent.name,
-                                 agent_version=self.agent.version)
-        
-        @self.app.route('/api/chat', methods=['POST'])
-        async def chat():
-            try:
-                data = request.get_json()
-                message = data.get('message', '')
-                user_id = data.get('user_id', 'web_user')
-                
-                if not message:
-                    return jsonify({'error': 'No message provided'}), 400
-                
-                response = await self.agent.process_message(message, user_id)
-                return jsonify(response)
-                
-            except Exception as e:
-                return jsonify({'error': str(e)}), 500
-        
-        @self.app.route('/api/status')
-        def status():
-            return jsonify(self.agent.get_status())
-        
-        @self.app.route('/api/history')
-        def history():
-            user_id = request.args.get('user_id', 'web_user')
-            limit = int(request.args.get('limit', 10))
-            history = self.agent.get_conversation_history(user_id, limit)
-            return jsonify(history)
-    
-    async def start(self):
-        """Start the web interface"""
-        if not self.app:
-            print("❌ Cannot start web interface - Flask not available")
-            return
-        
-        print(f"🚀 Starting web interface on {self.config['WEB_HOST']}:{self.config['WEB_PORT']}")
-        print(f"📱 Open your browser to: http://localhost:{self.config['WEB_PORT']}")
-        
-        # Run Flask in a separate thread
-        import threading
-        flask_thread = threading.Thread(
-            target=self.app.run,
-            kwargs={
-                'host': self.config['WEB_HOST'],
-                'port': self.config['WEB_PORT'],
-                'debug': self.config['DEBUG'],
-                'use_reloader': False
-            }
-        )
-        flask_thread.daemon = True
-        flask_thread.start()
-        
-        # Keep the main thread alive
-        try:
-            while True:
-                await asyncio.sleep(1)
-        except KeyboardInterrupt:
-            print("\n👋 Web interface stopped")
+logger = logging.getLogger(__name__)
 
-class CLIInterface:
-    def __init__(self, agent):
-        self.agent = agent
-        self.running = False
-        self._setup_rich()
-    
-    def _setup_rich(self):
-        """Setup Rich console"""
-        try:
-            from rich.console import Console
-            from rich.panel import Panel
-            from rich.prompt import Prompt, Confirm
-            self.console = Console()
-            self.Prompt = Prompt
-            self.Confirm = Confirm
-            self.Panel = Panel
-            print("✅ Rich CLI interface ready")
-        except ImportError:
-            print("❌ Rich not installed. Run: pip install rich")
-            self.console = None
-    
-    async def start(self):
-        """Start the CLI interface"""
-        if not self.console:
-            print("❌ Cannot start CLI interface - Rich not available")
-            return
-        
-        self.console.print(self.Panel.fit(
-            f"[bold blue]🤖 {self.agent.name} v{self.agent.version}[/bold blue]\n"
-            f"[green]AI Agent CLI Interface[/green]\n"
-            f"Type 'help' for commands or 'quit' to exit",
-            title="Welcome"
-        ))
-        
-        self.running = True
-        
-        while self.running:
-            try:
-                user_input = self.Prompt.ask("\n[bold cyan]You[/bold cyan]")
-                
-                if user_input.lower() in ['quit', 'exit', 'q']:
-                    if self.Confirm.ask("Are you sure you want to quit?"):
-                        self.running = False
-                        break
-                
-                elif user_input.lower() == 'help':
-                    self._show_help()
-                
-                elif user_input.lower() == 'status':
-                    self._show_status()
-                
-                elif user_input.lower() == 'history':
-                    self._show_history()
-                
-                elif user_input.lower() == 'clear':
-                    self._clear_history()
-                
-                else:
-                    await self._process_message(user_input)
-                    
-            except KeyboardInterrupt:
-                self.console.print("\n[yellow]Use 'quit' to exit properly[/yellow]")
-            except Exception as e:
-                self.console.print(f"[red]Error: {str(e)}[/red]")
-        
-        self.console.print("[green]Goodbye! 👋[/green]")
-    
-    async def _process_message(self, message: str):
-        """Process a user message"""
-        try:
-            with self.console.status("[bold green]Thinking..."):
-                response = await self.agent.process_message(message)
-            
-            self._display_response(response)
-            
-        except Exception as e:
-            self.console.print(f"[red]Error processing message: {str(e)}[/red]")
-    
-    def _display_response(self, response):
-        """Display agent response"""
-        content = response.get("content", "No response")
-        response_type = response.get("type", "unknown")
-        
-        color = "red" if response_type == "error" else "white"
-        
-        self.console.print(self.Panel(
-            f"[{color}]{content}[/{color}]",
-            title=f"[bold]🤖 {self.agent.name}[/bold]",
-            border_style=color
-        ))
-    
-    def _show_help(self):
-        """Show help information"""
-        help_text = """
-Available Commands:
-• help     - Show this help message
-• status   - Show agent status
-• history  - Show conversation history
-• clear    - Clear conversation history
-• quit     - Exit the CLI
 
-You can also just type messages to chat with the agent!
-        """
-        self.console.print(self.Panel(help_text, title="[bold]Help[/bold]"))
-    
-    def _show_status(self):
-        """Show agent status"""
-        status = self.agent.get_status()
-        
-        from rich.table import Table
-        table = Table(title="Agent Status")
-        table.add_column("Property", style="cyan")
-        table.add_column("Value", style="magenta")
-        
-        table.add_row("Name", status["name"])
-        table.add_row("Version", status["version"])
-        table.add_row("Status", status["status"])
-        table.add_row("Memory Size", str(status["memory_size"]))
-        
-        self.console.print(table)
-    
-    def _show_history(self):
-        """Show conversation history"""
-        history = self.agent.get_conversation_history(limit=5)
-        
-        if not history:
-            self.console.print("[yellow]No conversation history found.[/yellow]")
-            return
-        
-        for item in history:
-            self.console.print(f"\n[dim]{item['timestamp']}[/dim]")
-            self.console.print(f"[cyan]You:[/cyan] {item['message']}")
-            self.console.print(f"[green]Agent:[/green] {item['response']}")
-    
-    def _clear_history(self):
-        """Clear conversation history"""
-        if self.Confirm.ask("Are you sure you want to clear the conversation history?"):
-            self.agent.conversation_history = []
-            self.console.print("[green]Conversation history cleared.[/green]")
+def print_banner():
+    """Print application banner."""
+    banner = """
+    ╔═══════════════════════════════════════╗
+    ║         AI Agent v2.0.0               ║
+    ║   Refactored & Production Ready       ║
+    ╚═══════════════════════════════════════╝
+    """
+    print(banner)
 
-async def main():
-    """Main entry point"""
+
+def print_usage():
+    """Print usage information."""
+    usage = """
+Usage: python main.py [mode]
+
+Modes:
+    cli     Launch interactive command-line interface
+    web     Launch web server with REST API
+
+Environment Variables:
+    AGENT_NAME                 Agent name (default: AI Assistant)
+    AGENT_VERSION             Agent version (default: 2.0.0)
+    WEB_HOST                  Web server host (default: 0.0.0.0)
+    WEB_PORT                  Web server port (default: 8080)
+    DEBUG                     Debug mode (default: False)
+    LOG_LEVEL                 Logging level (default: INFO)
+    MAX_MESSAGE_LENGTH        Max message length (default: 5000)
+    MAX_CONVERSATION_HISTORY  Max history entries (default: 1000)
+
+Examples:
+    # Run CLI interface
+    python main.py cli
+
+    # Run web server on custom port
+    WEB_PORT=5000 python main.py web
+
+    # Run in debug mode with verbose logging
+    DEBUG=true LOG_LEVEL=DEBUG python main.py web
+    """
+    print(usage)
+
+
+async def run_cli():
+    """Run the CLI interface."""
+    logger.info("Starting CLI mode")
+
+    # Create agent and interface
+    agent = AIAgent(
+        name=Config.AGENT_NAME,
+        version=Config.AGENT_VERSION,
+        max_history=Config.MAX_CONVERSATION_HISTORY
+    )
+    cli = CLIInterface(agent)
+
+    # Start CLI
+    await cli.start()
+
+
+def run_web():
+    """Run the web interface."""
+    logger.info("Starting web mode")
+
+    # Create agent and interface
+    agent = AIAgent(
+        name=Config.AGENT_NAME,
+        version=Config.AGENT_VERSION,
+        max_history=Config.MAX_CONVERSATION_HISTORY
+    )
+    web = WebInterface(agent)
+
+    # Start web server
+    web.run()
+
+
+def main():
+    """Main entry point."""
+    print_banner()
+
+    # Set up logging
+    setup_logging()
+
+    # Validate configuration
     try:
-        # Initialize the AI Agent
-        agent = SimpleAIAgent()
-        
-        # Default configuration
-        config = {
-            'WEB_HOST': '0.0.0.0',
-            'WEB_PORT': 8080,
-            'DEBUG': False
-        }
-        
-        # Check command line arguments
-        if len(sys.argv) > 1:
-            mode = sys.argv[1].lower()
-            
-            if mode == "cli":
-                # Start CLI interface
-                cli = CLIInterface(agent)
-                await cli.start()
-                
-            elif mode == "web":
-                # Start web interface
-                web = WebInterface(agent, config)
-                await web.start()
-                
-            else:
-                print(f"Unknown mode: {mode}")
-                print("Available modes: cli, web")
-                sys.exit(1)
-        else:
-            # Default: start web interface
-            print("🤖 Starting AI Agent...")
-            print("Available modes:")
-            print("  python3 main.py cli  - Command Line Interface")
-            print("  python3 main.py web  - Web Interface")
-            print("\nStarting web interface by default...")
-            
-            web = WebInterface(agent, config)
-            await web.start()
-            
-    except KeyboardInterrupt:
-        print("\n👋 Agent stopped by user")
-    except Exception as e:
-        print(f"❌ Fatal error: {str(e)}")
+        Config.validate()
+        logger.info("Configuration validated successfully")
+        logger.debug(f"Config summary: {Config.summary()}")
+    except ValueError as e:
+        logger.error(f"Configuration error: {e}")
+        print(f"\nConfiguration Error: {e}\n")
         sys.exit(1)
 
-if __name__ == "__main__":
-    asyncio.run(main())
+    # Parse command-line arguments
+    if len(sys.argv) < 2:
+        print("\nError: No mode specified.\n")
+        print_usage()
+        sys.exit(1)
+
+    mode = sys.argv[1].lower()
+
+    try:
+        if mode == 'cli':
+            # Run CLI in async context
+            asyncio.run(run_cli())
+
+        elif mode == 'web':
+            # Run web server
+            run_web()
+
+        else:
+            print(f"\nError: Unknown mode '{mode}'\n")
+            print_usage()
+            sys.exit(1)
+
+    except KeyboardInterrupt:
+        logger.info("Application interrupted by user")
+        print("\n\nShutting down gracefully...\n")
+        sys.exit(0)
+
+    except Exception as e:
+        logger.error(f"Fatal error: {e}", exc_info=True)
+        print(f"\nFatal Error: {e}\n")
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()

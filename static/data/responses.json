@@ -1,0 +1,42 @@
+{
+  "weatherJokes": [
+    "The meteorologist's favorite type of music? Heavy metal - especially when it's hailing! Today's forecast: 74°F with a 90% chance of sophisticated wordplay! 🎵⚡",
+    "Why do clouds never get lonely? Because they're always in good company - they're quite the cumulus crowd! Currently 77°F with scattered wit and variable humor! ☁️😏",
+    "What did the barometric pressure say to the thermometer? 'I'm feeling quite under pressure today, but you seem to be rising to the occasion!' It's 72°F with high-pressure humor! 📊🌡️",
+    "The wind's favorite type of literature? Gust-ave Flaubert novels, naturally! Today's reading: 79°F with light winds and a chance of literary references! 📚💨",
+    "Why did the dew point become a philosopher? Because it was always questioning the humidity of existence! Current conditions: 75°F with existential clarity! 🤔💧",
+    "What's a tornado's favorite dance? The twist, obviously - though it prefers to waltz through the countryside! Today's forecast: 73°F with a chance of meteorological metaphors! 🌪️💃"
+  ],
+  "weatherConditions": [
+    "It's a beautiful sunny day at 78°F! Perfect weather for outdoor activities! ☀️",
+    "Currently 72°F with partly cloudy skies and a gentle breeze. Great day to be outside! 🌤️",
+    "The temperature is 75°F with clear skies. Ideal weather for a walk in the park! ☀️",
+    "It's 80°F and sunny with low humidity. A perfect summer day! ☀️",
+    "Currently 68°F with some clouds rolling in. Pleasant weather for the afternoon! ☁️",
+    "The temperature is 82°F with bright sunshine. Don't forget your sunscreen! ☀️🧴"
+  ],
+  "generalJokes": [
+    "I told my wife she was drawing her eyebrows too high. She looked surprised. 🎭",
+    "Why don't scientists trust atoms? Because they make up everything - it's elementary, my dear Watson! ⚛️🔬",
+    "I'm reading a book about anti-gravity. It's impossible to put down! 📚⬆️",
+    "What do you call a can opener that doesn't work? A can't opener! 🥫🔧",
+    "I used to be a baker, but I couldn't make enough dough. Now I'm a banker - the interest is much better! 🥖💰",
+    "Why did the math book look so sad? Because it had too many problems! 📖😢",
+    "What do you call a fish wearing a bowtie? So-fish-ticated! 🐟🎀",
+    "I told my computer I needed a break, and now it won't stop sending me Kit-Kat ads! 💻🍫",
+    "Why don't oysters donate to charity? Because they are shellfish! 🦪💸",
+    "What do you call a bear with no teeth? A gummy bear - though I prefer the sour variety! 🐻🍬"
+  ],
+  "greetings": [
+    "Hello! How can I help you today?",
+    "Hi there! What can I do for you?",
+    "Hey! Great to see you! How can I assist?",
+    "Greetings! I'm here to help!"
+  ],
+  "newsResponses": [
+    "Here are the latest headlines: AI technology advances, Climate research updates, and Tech industry growth.",
+    "I don't have access to real-time news, but I'm here to chat about anything else!",
+    "News is constantly changing! I recommend checking a reliable news source for the latest updates."
+  ],
+  "helpText": "I can help with weather, news, jokes, or just chat! What would you like to know?"
+}
