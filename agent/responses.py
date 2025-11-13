@@ -66,11 +66,13 @@ HELP_TEXT: str = """
 I'm an AI assistant that can help you with:
 - General conversation and questions
 - Weather information (try asking about the weather!)
+- Latest news headlines (ask me for news!)
 - Jokes and humor (ask me for a joke!)
 - Fun weather jokes (combine both!)
 
 Try asking me:
-- "What's the weather like?"
+- "What's the weather like?" or "Weather in Huntington, NY"
+- "Show me the news" or "What's in the news?"
 - "Tell me a joke"
 - "Tell me a weather joke"
 - "Hello" or "Hi"

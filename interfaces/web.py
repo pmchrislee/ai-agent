@@ -7,7 +7,8 @@ through HTTP requests.
 
 import asyncio
 import logging
-from flask import Flask, request, jsonify
+import os
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 
 from agent import AIAgent
@@ -28,7 +29,9 @@ class WebInterface:
             agent: The AIAgent instance to use
         """
         self.agent = agent
-        self.app = Flask(__name__)
+        # Configure Flask to use templates from project root
+        template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates'))
+        self.app = Flask(__name__, template_folder=template_dir)
 
         # Configure CORS
         CORS(self.app, origins=Config.get_cors_origins())
@@ -40,6 +43,16 @@ class WebInterface:
 
     def _register_routes(self):
         """Register Flask routes."""
+
+        @self.app.route('/', methods=['GET'])
+        def index():
+            """Serve the main web interface."""
+            status = self.agent.get_status()
+            return render_template(
+                'index.html',
+                agent_name=status.get('name', 'AI Assistant'),
+                agent_version=status.get('version', '2.0.0')
+            )
 
         @self.app.route('/api/health', methods=['GET'])
         def health():
@@ -62,7 +75,16 @@ class WebInterface:
             Expected JSON body:
             {
                 "message": "User's message",
-                "user_id": "optional-user-id"
+                "user_id": "optional-user-id",
+                "location": {
+                    "lat": latitude,
+                    "lon": longitude,
+                    "city": "optional city name"
+                },
+                "context": {
+                    "type": "weather|news|joke",
+                    "lastMessage": "previous message"
+                }
             }
             """
             try:
@@ -76,6 +98,8 @@ class WebInterface:
 
                 message = data.get('message', '')
                 user_id = data.get('user_id', 'default')
+                location = data.get('location')  # Optional location data
+                context = data.get('context')  # Optional conversation context
 
                 # Validate inputs
                 try:
@@ -91,7 +115,7 @@ class WebInterface:
                 asyncio.set_event_loop(loop)
                 try:
                     response = loop.run_until_complete(
-                        self.agent.process_message(message, user_id)
+                        self.agent.process_message(message, user_id, location=location, context=context)
                     )
                 finally:
                     loop.close()
